@@ -107,6 +107,15 @@ python soterg-stratum-proxy.py 3333 127.0.0.1 rpcuser rpcpass <your_rpc_port> fa
 
 ---
 
+## Video Instruction:
+
+#### For Windows
+https://www.youtube.com/watch?v=AOMUkxFzb8U
+
+#### For Linux
+https://www.youtube.com/watch?v=f6RqfnguN0Q
+
+
 ## 🔑 How x12rt Rotation Works
 
 SoterG uses a **12‑hash rotation** chosen from:
