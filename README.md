@@ -102,7 +102,7 @@ NOTE: the proxy doesn’t care what the port number is, as long as it matches no
 
 ### Example
 ```bash
-python soteria-stratum.py 3333 127.0.0.1 rpcuser rpcpass <your_rpc_port> false true
+python soterg-stratum-proxy.py 3333 127.0.0.1 rpcuser rpcpass <your_rpc_port> false true
 ```
 
 ---
