@@ -27,14 +27,12 @@ Unlike Kawpow proxies, this implementation supports **SoterG**, which derives it
 
 ## 🪟 Windows Quick Start
 
-1. **Go into the `windows` folder** of the proxy package.  
-
-2. **Double‑click `stratum.bat`.**  
+1. **Double‑click `stratum.bat`.**  
    - This script will download Python (if needed), install pip, install all required modules, and then ask you for your node details (IP, RPC port, username, password, etc.).  
    - It will also ask which port you want miners to connect to (the Stratum port).  
    - Finally, it will generate a launcher file called `stratum.bat` in the **main proxy folder**.  
 
-3. **Start the proxy:**  
+2. **Start the proxy:**  
    - After setup, go to the main proxy folder (where `soterg-stratum-proxy.py` is).  
    - Double‑click the newly generated `stratum.bat`.  
    - You’ll see a message like:  
@@ -43,7 +41,7 @@ Unlike Kawpow proxies, this implementation supports **SoterG**, which derives it
      ```
      (replace `3333` with the port you chose).  
 
-4. **Point your miner to the proxy:**  
+3. **Point your miner to the proxy:**  
    - Example miner URL:  
      ```
      stratum+tcp://127.0.0.1:3333
