@@ -1,0 +1,5 @@
+aiohttp==3.9.5
+aiorpcx==0.22.1
+base58==2.1.1
+pysha3==1.0.3
+
