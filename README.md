@@ -122,6 +122,8 @@ This is good if you want to run the stratum proxy as a standalone tool.
    > pysha3
    > ```
 
+---
+
 ### ⚠️ Avoid `--break-system-packages`
 You *can* override with `pip install --break-system-packages ...`, but that risks breaking your distro’s Python. Safer to use apt or a venv.
 
