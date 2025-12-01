@@ -22,6 +22,39 @@ Unlike Kawpow proxies, this implementation supports **SoterG**, which derives it
 ---
 
 ## ⚙️ Requirements
+
+### Windows (batch file)
+
+## 🪟 Windows Quick Start
+
+1. **Go into the `windows` folder** of the proxy package.  
+
+2. **Double‑click `stratum.bat`.**  
+   - This script will download Python (if needed), install pip, install all required modules, and then ask you for your node details (IP, RPC port, username, password, etc.).  
+   - It will also ask which port you want miners to connect to (the Stratum port).  
+   - Finally, it will generate a launcher file called `stratum.bat` in the **main proxy folder**.  
+
+3. **Start the proxy:**  
+   - After setup, go to the main proxy folder (where `soterg-stratum-proxy.py` is).  
+   - Double‑click the newly generated `stratum.bat`.  
+   - You’ll see a message like:  
+     ```
+     Connect to your stratum proxy at stratum+tcp://localhost:3333
+     ```
+     (replace `3333` with the port you chose).  
+
+4. **Point your miner to the proxy:**  
+   - Example miner URL:  
+     ```
+     stratum+tcp://127.0.0.1:3333
+     ```
+   - Use your chosen username/password when configuring the miner.
+
+#### Note : The first run of stratum.bat is setup, and the second run of stratum.bat (generated in the main folder) is the actual launcher.
+---
+
+#### Linux/macOS users should run the pip command manually.
+ 
 - Python 3.9+
 - Dependencies:
   ```bash
@@ -73,6 +106,24 @@ This is good if you want to run the stratum proxy as a standalone tool.
 
 ---
 
+### 🔹 Option 4: Make sure Python 3.9+ is installed:
+   ```bash
+   python3 --version
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+   > `requirements.txt` includes:
+   > ```
+   > aiohttp
+   > aiorpcx
+   > base58
+   > pysha3
+   > ```
+
 ### ⚠️ Avoid `--break-system-packages`
 You *can* override with `pip install --break-system-packages ...`, but that risks breaking your distro’s Python. Safer to use apt or a venv.
 
@@ -87,7 +138,7 @@ You *can* override with `pip install --break-system-packages ...`, but that risk
 Run the stratum proxy with:
 
 ```bash
-python soterg-stratum-proxy.py proxy_port node_ip node_username node_password node_port listen_externally [testnet]
+python3 soterg-stratum-proxy.py proxy_port node_ip node_username node_password node_port listen_externally [testnet]
 ```
 
 ### Arguments
@@ -102,8 +153,14 @@ NOTE: the proxy doesn’t care what the port number is, as long as it matches no
 
 ### Example
 ```bash
-python soterg-stratum-proxy.py 3333 127.0.0.1 rpcuser rpcpass <your_rpc_port> false true
+python3 soterg-stratum-proxy.py 3333 127.0.0.1 rpcuser rpcpass <your_rpc_port> false true
 ```
+### Example miner connection
+Point your miner to:
+```
+stratum+tcp://127.0.0.1:3333
+```
+using your chosen username/password.
 
 ---
 
