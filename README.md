@@ -90,7 +90,7 @@ pip install aiohttp aiorpcx base58
 Every time you want to run the stratum proxy, activate the venv first:
 ```bash
 source ~/soter-proxy-venv/bin/activate
-python soterg-stratum-proxy.py ...
+soterg-stratum-proxy.py proxy_port node_ip node_username node_password node_port listen_externally [testnet]
 ```
 ---
 
@@ -100,6 +100,8 @@ python soterg-stratum-proxy.py ...
 sudo apt install pipx
 pipx install aiohttp aiorpcx base58
 ```
+soterg-stratum-proxy.py proxy_port node_ip node_username node_password node_port listen_externally [testnet]
+
 This is good if you want to run the stratum proxy as a standalone tool.
 
 ---
@@ -122,6 +124,7 @@ This is good if you want to run the stratum proxy as a standalone tool.
    > pysha3
    > ```
 
+ soterg-stratum-proxy.py proxy_port node_ip node_username node_password node_port listen_externally [testnet]
 ---
 
 ### ⚠️ Avoid `--break-system-packages`
