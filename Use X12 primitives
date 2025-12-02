@@ -197,7 +197,7 @@ class StratumSession(RPCSession):
             'mining.submit': self.handle_submit,
             'eth_submitHashrate': self.handle_eth_submitHashrate,
         }
-
+        self.extranonce1 = None
     async def handle_request(self, request):
         if isinstance(request, Request):
             handler = self.handlers.get(request.method)
@@ -218,15 +218,17 @@ class StratumSession(RPCSession):
     async def handle_subscribe(self, *args):
         if self not in self._state.all_sessions:
             self._state.new_sessions.add(self)
+
+        # Assign unique extranonce1 per session (fixed per connection)
+        self.extranonce1 = self._state.bits_counter.to_bytes(4, 'big').hex()
         self._state.bits_counter += 1
 
-        # Generate a unique extranonce1 per session
-        extranonce1 = hex(self._state.bits_counter)[2:]
         extranonce2_size = 4  # ccminer expects this field
 
+        # Return subscribe response (protocol spec)
         return [
             [["mining.set_difficulty", "mining.notify"]],
-            extranonce1,
+            self.extranonce1,
             extranonce2_size
         ]
 
@@ -241,12 +243,11 @@ class StratumSession(RPCSession):
             self._state.address = address
         return True
 
-    async def handle_submit(self, worker: str, job_id: str, nonce_hex: str, header_hex: str):
+    async def handle_submit(self, worker: str, job_id: str, nonce_hex: str, extranonce2_hex: str):
         now = datetime.now()
         print('Possible solution')
         print(worker)
         print(job_id)
-        print(header_hex)
 
         # Resolve state by job id
         state = self._state
@@ -263,13 +264,36 @@ class StratumSession(RPCSession):
             nonce_hex = nonce_hex[2:]
         nonce_le_hex = bytes.fromhex(nonce_hex)[::-1].hex()
 
+        # --- NEW: rebuild coinbase with extranonce1 + extranonce2 ---
+        coinbase1_hex, coinbase2_hex = split_coinbase_for_extranonce(state.coinbase_tx, state.height)
+        full_coinbase_hex = coinbase1_hex + self.extranonce1 + extranonce2_hex + coinbase2_hex
+        state.coinbase_tx = bytes.fromhex(full_coinbase_hex)
+
+        # Recompute coinbase txid and merkle root
+        state.coinbase_txid = dsha256(state.coinbase_tx)  # strip witness if needed
+        txids = [state.coinbase_txid] + [bytes.fromhex(tx)[::-1] for tx in state.externalTxs]
+        merkle = merkle_from_txids(txids)
+
+       # Rebuild block header with new merkle
+        state.header = (
+         state.version.to_bytes(4, 'little') +
+         state.prevHash +
+         merkle +
+         state.timestamp.to_bytes(4, 'little') +
+         bytes.fromhex(state.bits)[::-1] +
+         state.height.to_bytes(4, 'little')
+       )
+
+       # Build full block
         block_hex = state.build_block(nonce_le_hex)
         data = {
-            'jsonrpc': '2.0',
-            'id': '0',
-            'method': 'submitblock',
-            'params': [block_hex]
+        'jsonrpc': '2.0',
+        'id': '0',
+        'method': 'submitblock',
+        'params': [block_hex]
         }
+
+
 
         async with ClientSession() as session:
             async with session.post(f'http://{self._node_username}:{self._node_password}@{self._node_url}:{self._node_port}', data=json.dumps(data)) as resp:
@@ -507,24 +531,92 @@ async def stateUpdater(state: TemplateState, old_states, drop_after, node_url: s
 # Notify helper (x12rt-aware)
 # -----------------------------
 
+SOTERG_DIFF1_TARGET = int("00000002ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)
+
+def bits_to_target(bits_hex: str) -> int:
+    bits_int = int(bits_hex, 16)
+    exponent = bits_int >> 24
+    mantissa = bits_int & 0xFFFFFF
+    if exponent <= 3:
+        target = mantissa >> (8 * (3 - exponent))
+    else:
+        target = mantissa << (8 * (exponent - 3))
+    return target
+
+def target_to_difficulty(target: int) -> float:
+    return SOTERG_DIFF1_TARGET / target
+# -----------------------------
+# Coinbase split helper
+# -----------------------------
+def split_coinbase_for_extranonce(coinbase_tx: bytes, height: int) -> tuple[str, str]:
+    """
+    Split coinbase into coinbase1 and coinbase2 at the extranonce insertion point.
+    coinbase1 ends right after the BIP34 height push.
+    coinbase2 starts immediately after, where extranonce will be inserted.
+    """
+    tx_hex = coinbase_tx.hex()
+
+    # Encode block height (BIP34) as little-endian
+    height_bytes = height.to_bytes((height.bit_length() + 7) // 8, 'little')
+    height_push = op_push(len(height_bytes)).hex() + height_bytes.hex()
+
+    # Find where the height push occurs in the coinbase
+    idx = tx_hex.find(height_push)
+    if idx == -1:
+        raise ValueError("Could not locate BIP34 height push in coinbase")
+
+    # Split immediately after the height push
+    split_at = idx + len(height_push)
+    coinbase1_hex = tx_hex[:split_at]
+    coinbase2_hex = tx_hex[split_at:]
+
+    return coinbase1_hex, coinbase2_hex
+# -----------------------------
+# Subscription handler
+# -----------------------------
+async def handle_subscribe(session: StratumSession):
+    # Assign unique extranonce1 per session
+    extranonce1 = session.id.to_bytes(4, 'big').hex()
+    extranonce_size = 4
+    await session.send_notification("mining.set_extranonce", (extranonce1, extranonce_size))
+
+# -----------------------------
+# Notify helper (x12rt-aware)
+# -----------------------------
 async def notify_x12rt(session: StratumSession, state: TemplateState):
-    """
-    Sends mining.notify in the standard 9‑parameter format ccminer expects.
-    """
     job_id = hex(state.job_counter)[2:]
-    prevhash_hex = state.prevHash[::-1].hex()  # big‑endian
-    # Split coinbase into two parts
-    coinbase_hex = state.coinbase_tx.hex()
-    coinbase1_hex = coinbase_hex[:40]   # first part
-    coinbase2_hex = coinbase_hex[40:]   # rest
-    merkle_branch = []  # can add txids if needed
+    prevhash_hex = state.prevHash[::-1].hex()
+
+    # Proper coinbase split using helper
+    coinbase1_hex, coinbase2_hex = split_coinbase_for_extranonce(state.coinbase_tx, state.height)
+
+    merkle_branch = []
     version_hex = state.version.to_bytes(4, 'little').hex()
     nbits_hex = state.bits
     ntime_hex = state.timestamp.to_bytes(4, 'little').hex()
     clean_jobs = True
-    
+
+    # Difficulty calculation
+    target_int = bits_to_target(state.bits)
+    difficulty_value = target_to_difficulty(target_int)
+
+    # Debug
+    print("=== Job Debug ===")
+    print(f"Job ID: {job_id}")
+    print(f"Prevhash: {prevhash_hex}")
+    print(f"Coinbase1: {coinbase1_hex}")
+    print(f"Coinbase2: {coinbase2_hex}")
+    print(f"Extranonce1 (session): {session.extranonce1}")
+    print(f"Version: {version_hex}, Bits: {nbits_hex}, Time: {ntime_hex}")
+    print(f"Target: {hex(target_int)}, Difficulty: {difficulty_value}")
+    print("=================")
+
+    # Send difficulty
+    await session.send_notification("mining.set_difficulty", (difficulty_value,))
+
+    # Send job notify
     await session.send_notification(
-        'mining.notify',
+        "mining.notify",
         (
             job_id,
             prevhash_hex,
@@ -534,10 +626,9 @@ async def notify_x12rt(session: StratumSession, state: TemplateState):
             version_hex,
             nbits_hex,
             ntime_hex,
-            clean_jobs
+            clean_jobs,
         )
     )
-
 # -----------------------------
 # Main
 # -----------------------------
