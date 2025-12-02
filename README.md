@@ -173,8 +173,10 @@ Make sure you configure the rpcport on SoterG-Stratum-Proxy.py accordingly.
 Run the stratum proxy with:
 
 ```bash
-python soterg-stratum-proxy.py proxy_port node_ip node_username node_password node_port listen_externally [testnet]
+python3 soterg-stratum-proxy.py proxy_port node_ip node_username node_password node_port listen_externally [testnet]
 ```
+e.g
+python3 soterg-stratum-proxy.py 3333 localhost soter1 pass1 7896 true
 
 ### Arguments
 - `proxy_port` → Port miners connect to (e.g. `3333`)
@@ -211,7 +213,7 @@ Connect to it with your miner:
 
 | status | miner | example |
 | - | - | - |
-| :heavy_check_mark: Works | ccminer-soterg | ccminer-soterg  --a soterg -P stratum+tcp://YOUR_WALLET_ADDRESS.worker@PROXY_IP:54325 |
+| :heavy_check_mark: Works | ccminer-soterg | ccminer -a soterg -o stratum+tcp://127.0.0.1:3333 -u YOUR_WALLET_ADDRESS.worker -p x |
 
 ## Video Instruction:
 
