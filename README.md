@@ -157,6 +157,7 @@ note:
 - Default Mainnet rpcport = `7896`
 - Default Testnet rpcport = `18766`
 
+Make sure you configure the rpcport on SoterG-Stratum-Proxy.py accordingly.
 
 ## 🚀 Usage
 
