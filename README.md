@@ -136,6 +136,28 @@ You *can* override with `pip install --break-system-packages ...`, but that risk
 
 ---
 
+## Node Requirements:
+
+Requires the following `soteria.conf` options:
+```
+server=1
+rpcuser=my_username
+rpcpassword=my_password
+rpcallowip=127.0.0.1
+```
+On *nix OS's this file is located at `~/.soteria` by default. On windows, this file is located at `%appdata%\roaming\Soteria`.
+
+You may need to create the `soteria.conf` file and add those lines if it does not exist.
+
+For testnet you can add `testnet=1` to your `soteria.conf`
+
+## Note: Please keep in mind that Soteria testnet is sha256d algorithm and must be CPU mined.
+
+note:
+- Default Mainnet rpcport = `7896`
+- Default Testnet rpcport = `18766`
+
+
 ## 🚀 Usage
 
 Run the stratum proxy with:
