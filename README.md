@@ -38,7 +38,8 @@ Mining software will only send a share when it has found a block. No shares for 
 1. **Double‑click `stratum.bat`.**  
    - This script will download Python (if needed), install pip, install all required modules, and then ask you for your node details (IP, RPC port, username, password, etc.).  
    - It will also ask which port you want miners to connect to (the Stratum port).  
-   - Finally, it will generate a launcher file called `stratum.bat` in the **main proxy folder**.  
+   - After stratum.bat completes with no errors, go back to the previous folder, in the **main proxy folder**.
+   - Double-click run.bat to run the stratum proxy.
 
 2. **Start the proxy:**  
    - After setup, go to the main proxy folder (where `soterg-stratum-proxy.py` is).  
