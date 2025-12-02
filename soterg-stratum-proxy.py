@@ -10,7 +10,7 @@ import json
 import time
 import sys
 import urllib.parse
-from copy import deepcopy
+import copy
 from dataclasses import dataclass, field
 from typing import Set, List, Optional, Tuple
 from datetime import datetime
@@ -165,7 +165,7 @@ def add_old_state_to_queue(queue: Tuple[List[str], dict], state: TemplateState, 
     if jid in queue[1]:
         return
     queue[0].append(jid)
-    queue[1][jid] = deepcopy(state)
+    queue[1][jid] = copy.copy(state)
     while len(queue[0]) > drop_after:
         oldest = queue[0].pop(0)
         queue[1].pop(oldest, None)
@@ -219,7 +219,16 @@ class StratumSession(RPCSession):
         if self not in self._state.all_sessions:
             self._state.new_sessions.add(self)
         self._state.bits_counter += 1
-        return [None, self._state.bits_counter.to_bytes(2, 'big').hex()]
+
+        # Generate a unique extranonce1 per session
+        extranonce1 = hex(self._state.bits_counter)[2:]
+        extranonce2_size = 4  # ccminer expects this field
+
+        return [
+            [["mining.set_difficulty", "mining.notify"]],
+            extranonce1,
+            extranonce2_size
+        ]
 
     async def handle_authorize(self, username: str, password: str):
         address = username.split('.')[0]
@@ -379,7 +388,7 @@ async def stateUpdater(state: TemplateState, old_states, drop_after, node_url: s
                 original_state = None
 
                 if state.height == -1 or state.height != height_int:
-                    original_state = deepcopy(state)
+                    original_state = copy.copy(state)
                     print('New block, update state')
                     new_block = True
 
@@ -399,7 +408,7 @@ async def stateUpdater(state: TemplateState, old_states, drop_after, node_url: s
                 # Update coinbase and merkle if new block, new witness, or 60s passed
                 if new_block or new_witness or state.timestamp + 60 < ts:
                     if original_state is None:
-                        original_state = deepcopy(state)
+                        original_state = copy.copy(state)
 
                     # BIP34 height push
                     bytes_needed_sub_1 = 0
@@ -500,37 +509,32 @@ async def stateUpdater(state: TemplateState, old_states, drop_after, node_url: s
 
 async def notify_x12rt(session: StratumSession, state: TemplateState):
     """
-    Sends mining.set_target and mining.notify with x12rt payload:
-    - selector_le: SHA256d(nTime & TIME_MASK) LE bytes
-    - rotations: 12 indices computed via GetHashSelection over selector
-    - header_le: 80-byte header without nonce
+    Sends mining.notify in the standard 9‑parameter format ccminer expects.
     """
-    target_hex = state.target
-    bits_hex = state.bits
     job_id = hex(state.job_counter)[2:]
-    header_hash_hex = state.headerHash  # may be None
-    seed_hex = state.seedHash.hex() if state.seedHash else bytes(32).hex()
-
-    rotations = state.x12rt_rotations or [0] * 12
-    selector_le_hex = (state.x12rt_selector_le or bytes(32)).hex()
-
-    await session.send_notification('mining.set_target', (target_hex,))
+    prevhash_hex = state.prevHash[::-1].hex()  # big‑endian
+    # Split coinbase into two parts
+    coinbase_hex = state.coinbase_tx.hex()
+    coinbase1_hex = coinbase_hex[:40]   # first part
+    coinbase2_hex = coinbase_hex[40:]   # rest
+    merkle_branch = []  # can add txids if needed
+    version_hex = state.version.to_bytes(4, 'little').hex()
+    nbits_hex = state.bits
+    ntime_hex = state.timestamp.to_bytes(4, 'little').hex()
+    clean_jobs = True
+    
     await session.send_notification(
         'mining.notify',
         (
             job_id,
-            header_hash_hex,          # optional; miners should compute PoW themselves
-            seed_hex,
-            target_hex,
-            True,
-            state.height,
-            bits_hex,
-            {
-                "algo": "x12rt",
-                "selector_le": selector_le_hex,  # SHA256d(nTime & TIME_MASK), LE
-                "rotations": rotations,          # 12 ints (0..11)
-                "header_le": state.header.hex(), # 80-byte header hex (without nonce)
-            }
+            prevhash_hex,
+            coinbase1_hex,
+            coinbase2_hex,
+            merkle_branch,
+            version_hex,
+            nbits_hex,
+            ntime_hex,
+            clean_jobs
         )
     )
 
