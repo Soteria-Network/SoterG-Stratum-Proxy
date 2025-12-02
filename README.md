@@ -21,6 +21,14 @@ Unlike Kawpow proxies, this implementation supports **SoterG**, which derives it
 
 ---
 
+## *Important Note 1*
+This is not pool software and is meant for solo-mining. All proceeds go to the address of the first miner that connects.
+
+## *Important Note 2*
+Mining software will only send a share when it has found a block. No shares for long periods of time is normal behavior.
+
+---
+
 ## ⚙️ Requirements
 
 ### Windows (batch file)
