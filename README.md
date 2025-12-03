@@ -156,7 +156,6 @@ Here’s how you’d adjust your config:
 server=1
 rpcuser=my_username
 rpcpassword=my_password
-rpcallowip=0.0.0.0/0        # allow RPC from anywhere (or restrict to your home IP)
 rpcport=7896                # RPC port for stratum proxy
 port=8323                   # P2P port
 listen=1
@@ -166,7 +165,20 @@ upnp=0
 onlynet=ipv4
 bind=0.0.0.0:8323          # bind to all interfaces so peers can connect
 ```
+### 🔒 Security note
+- Always use strong `rpcuser` and `rpcpassword`.
+- Consider firewall rules (e.g. `ufw` or `iptables`) to restrict access to RPC port 7896, 8323 and your ssh port
 
+
+### ⚡ How to connect from your local PC
+- Run the stratum proxy on the VPS with the node RPC credentials (`rpcuser`, `rpcpassword`, `rpcport`).  
+- On your miner config (local PC), point to the VPS IP and proxy port, e.g.:  
+  ```
+  stratum+tcp://<VPS_IP>:3333
+  ```
+- The proxy will talk to the node via RPC, and your miner will talk to the proxy via stratum.
+
+---
 
 On *nix OS's this file is located at `~/.soteria` by default. On windows, this file is located at `%appdata%\roaming\Soteria`.
 
