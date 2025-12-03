@@ -147,13 +147,27 @@ You *can* override with `pip install --break-system-packages ...`, but that risk
 
 ## Node Requirements:
 
-Requires the following `soteria.conf` options:
+On a VPS, if you want to connect from your local PC to the stratum proxy, you need to open it up to external connections.
+
+### ✅ Minimal `soteria.conf` for VPS
+Here’s how you’d adjust your config:
+
 ```
 server=1
 rpcuser=my_username
 rpcpassword=my_password
-rpcallowip=127.0.0.1
+rpcallowip=0.0.0.0/0        # allow RPC from anywhere (or restrict to your home IP)
+rpcport=7896                # RPC port for stratum proxy
+port=8323                   # P2P port
+listen=1
+discover=0
+dnsseed=0
+upnp=0
+onlynet=ipv4
+bind=0.0.0.0:8323          # bind to all interfaces so peers can connect
 ```
+
+
 On *nix OS's this file is located at `~/.soteria` by default. On windows, this file is located at `%appdata%\roaming\Soteria`.
 
 You may need to create the `soteria.conf` file and add those lines if it does not exist.
