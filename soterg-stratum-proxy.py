@@ -531,7 +531,7 @@ async def stateUpdater(state: TemplateState, old_states, drop_after, node_url: s
 # Notify helper (x12rt-aware)
 # -----------------------------
 
-SOTERG_DIFF1_TARGET = int("00000002ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)
+SOTERG_DIFF1_TARGET = int("00000004ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)
 
 def bits_to_target(bits_hex: str) -> int:
     bits_int = int(bits_hex, 16)
