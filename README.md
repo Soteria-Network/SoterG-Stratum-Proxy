@@ -57,7 +57,7 @@ Mining software will only send a share when it has found a block. No shares for 
      ```
    - Use your chosen username/password when configuring the miner.
 
-#### Note : The first run of stratum.bat is setup, and the second run of stratum.bat (generated in the main folder) is the actual launcher.
+#### Note : The first run of stratum.bat is setup, and the second run of run.bat (generated in the main folder) is the actual launcher.
 ---
 
 #### Linux/macOS users should run the pip command manually.
